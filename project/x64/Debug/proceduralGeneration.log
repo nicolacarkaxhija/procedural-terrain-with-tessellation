@@ -1,0 +1,30 @@
+﻿  ProceduralLand.cpp
+c:\users\feder\documents\cg3d_nicola\include\camera.h(125): warning C4305: '=': troncamento da 'double' a 'T'
+          with
+          [
+              T=float
+          ]
+c:\users\feder\documents\cg3d_nicola\include\camera.h(126): warning C4305: '=': troncamento da 'double' a 'T'
+          with
+          [
+              T=float
+          ]
+c:\users\feder\documents\cg3d_nicola\include\camera.h(127): warning C4305: '=': troncamento da 'double' a 'T'
+          with
+          [
+              T=float
+          ]
+c:\users\feder\documents\cg3d_nicola\include\camera.h(128): warning C4305: '=': troncamento da 'double' a 'T'
+          with
+          [
+              T=float
+          ]
+c:\users\feder\documents\cg3d_nicola\include\camera.h(132): warning C4244: 'inizializzazione': conversione da 'double' a 'float'. Possibile perdita di dati.
+c:\users\feder\documents\cg3d_nicola\include\camera.h(149): warning C4305: 'argomento': troncamento da 'double' a 'float'
+c:\users\feder\documents\cg3d_nicola\objects\proceduralland.h(34): warning C4244: 'inizializzazione': conversione da 'double' a 'const int'. Possibile perdita di dati.
+c:\users\feder\documents\cg3d_nicola\objects\proceduralland.cpp(18): warning C4305: '=': troncamento da 'double' a 'float'
+c:\users\feder\documents\cg3d_nicola\objects\proceduralland.cpp(21): warning C4305: '=': troncamento da 'double' a 'float'
+c:\users\feder\documents\cg3d_nicola\objects\proceduralland.cpp(22): warning C4305: '=': troncamento da 'double' a 'float'
+c:\users\feder\documents\cg3d_nicola\objects\proceduralland.cpp(131): warning C4244: 'argomento': conversione da 'double' a 'float'. Possibile perdita di dati.
+c:\users\feder\documents\cg3d_nicola\objects\proceduralland.cpp(160): warning C4244: 'inizializzazione': conversione da 'double' a 'int'. Possibile perdita di dati.
+  proceduralGeneration.vcxproj -> C:\Users\feder\Documents\cg3d_nicola\x64\Debug\proceduralGeneration.exe

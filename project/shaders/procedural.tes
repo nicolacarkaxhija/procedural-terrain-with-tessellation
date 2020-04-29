@@ -1,0 +1,178 @@
+#version 410 core                                                                               
+                     
+// Thanks to Etay Meiri (http://ogldev.atspace.co.uk/www/tutorial30/tutorial30.html) for his tessellation shader tutorial!
+
+layout(triangles, equal_spacing, ccw) in;                                                       
+                                                                                                
+uniform mat4 gVP;                                                                               
+uniform float gDispFactor;      
+uniform float freq;
+uniform int octaves;
+
+uniform vec3 gEyeWorldPos;  
+uniform vec3 seed;
+uniform vec4 clipPlane;
+					   
+in vec3 WorldPos_ES_in[];                                                                       
+in vec2 TexCoord_ES_in[];                                                                       
+in vec3 Normal_ES_in[];                                                                         
+                                                                                                
+out vec3 WorldPos;                                                                        
+out vec2 texCoord;                                                                        
+out vec3 Normal;
+out vec3 wireframeColor;
+out float distFromPos;
+out float dispFactor;
+out float height;
+
+uniform sampler2D randomTexture;
+
+                                                                                                
+vec2 interpolate2D(vec2 v0, vec2 v1, vec2 v2)                                                   
+{                                                                                               
+    return vec2(gl_TessCoord.x) * v0 + vec2(gl_TessCoord.y) * v1 + vec2(gl_TessCoord.z) * v2;   
+}                                                                                               
+                                                                                                
+vec3 interpolate3D(vec3 v0, vec3 v1, vec3 v2)                                                   
+{                                                                                               
+    return vec3(gl_TessCoord.x) * v0 + vec3(gl_TessCoord.y) * v1 + vec3(gl_TessCoord.z) * v2;   
+}
+
+float rand2d(in vec2 st)
+{
+	return fract(dot(texture(randomTexture, st/3000).rg, vec2(12.9898, 78.233) + seed.xy));
+}
+
+float Interpolate(float a, float b, float x) {  // cosine interpolation
+	float ft = x * 3.1415927f;
+	float f = (1 - cos(ft)) * 0.5;
+	return  a * (1 - f) + b * f;
+}
+
+const mat2 m = mat2(0.8,-0.6,0.6,0.8);
+
+vec3 InterpolatedNoiseD(float x, float y) {
+	vec2 xy = vec2(x,y);
+	vec2 randomInput = floor(xy);
+	float a = rand2d(randomInput);
+	float b = rand2d(randomInput + vec2(1.0, 0.0));
+	float c = rand2d(randomInput + vec2(0.0, 1.0));
+	float d = rand2d(randomInput + vec2(1.0, 1.0));
+
+	vec2 fracW = fract(xy);
+	vec2 w = fracW;
+	w = w*w*w*(10.0 + w*(-15.0 + 6.0*w));
+	vec2 dw = 30*fracW*fracW*(fracW*fracW - 2*fracW + 1);
+	
+	float k0 = a, 
+	k1 = b - a, 
+	k2 = c - a, 
+	k3 = d - c - b + a;
+
+	float n = k0 + k1*w.x + k2*w.y + k3*w.x*w.y;
+	float dndx = (k1 + k3*w.y)*dw.x;
+	float dndy = (k2 + k3*w.x)*dw.y;
+
+	return vec3(n, dndx, dndy);
+}
+uniform float power;
+
+
+float derivativeFBM(float x, float y){
+    vec2 st = vec2(x,y);
+    //st *= freq;
+    
+    //int numOctaves = 10;
+	float persistence = 0.5;
+	float total = 0.0,
+		frequency = 0.005*freq,
+		amplitude = gDispFactor;
+	for (int i = 0; i < octaves; ++i) {
+		frequency *= 2.0;
+		amplitude *= persistence;
+
+        //st = frequency*m*st;
+
+		vec2 v = frequency*m*st;
+		vec3 n = InterpolatedNoiseD(v.x,v.y);
+		vec2 d = vec2(n.y, n.z);
+		total += n.x * amplitude /(1.0 + dot(d,d));
+	}
+	return pow(total, power);
+}
+
+
+float derivativeFBM(vec2 st){
+    
+	float persistence = 0.5;
+	float total = 0.0,
+		frequency = 0.005*freq,
+		amplitude = gDispFactor;
+	for (int i = 0; i < octaves; ++i) {
+		frequency *= 2.0;
+		amplitude *= persistence;
+
+		vec2 v = frequency*m*st;
+		vec3 n = InterpolatedNoiseD(v.x,v.y);
+		vec2 d = vec2(n.y, n.z);
+		total += n.x * amplitude /(1.0 + dot(d,d));
+	}
+	return pow(total, power);
+}
+
+int GetTessLevel(float AvgDistance)                                            
+{                                                       
+
+    if (AvgDistance <= 40.0*10.0) { 
+	        return 1;                                                                            
+    }
+    if (AvgDistance <= 80.0*10.0) { 
+        return 2;                                                                            
+    }
+	else if (AvgDistance <= 300.0*10.0) { 
+        return 3;                                                                            
+    }else if(AvgDistance <= 1200.0*10.0){
+		return 4;
+	}
+    else if (AvgDistance <= 3000.0*10.0) {  
+        return 5;                                                                             
+    }                                                                                           
+    else {                                 
+        return 6;                                                                             
+    }
+}  
+
+
+vec3 getTessColor(float AvgDistance){
+	int tessLvl = GetTessLevel(AvgDistance);
+	vec3 color;
+	switch(tessLvl){
+		case 1: color = vec3(1.0,0.0,0.0); break;
+		case 2: color = vec3(0.0,1.0,0.0); break;
+		case 3: color = vec3(0.0,0.0,1.0); break;
+		case 4: color = vec3(1.0,1.0,0.0); break;
+		case 5: color = vec3(1.0,0.0,1.0); break;
+		case 6: color = vec3(0.0,1.0,1.0); break;
+	}
+	return color;
+}
+
+                                                                                      
+void main()                                                                                     
+{                                                                                               
+    // Interpolate the attributes of the output vertex using the barycentric coordinates        
+    texCoord = interpolate2D(TexCoord_ES_in[0], TexCoord_ES_in[1], TexCoord_ES_in[2]);    
+    Normal = normalize(interpolate3D(Normal_ES_in[0], Normal_ES_in[1], Normal_ES_in[2]));            
+    WorldPos = interpolate3D(WorldPos_ES_in[0], WorldPos_ES_in[1], WorldPos_ES_in[2]);    
+    
+
+    // Displace the vertex along the normal                                                     
+	float heightValue = derivativeFBM(WorldPos.xz);
+	WorldPos += Normal * heightValue;
+	
+	//compute a color respect to the tessellation level; is faster if done here in the TES rather than in the FRAGS
+	distFromPos = distance(WorldPos, gEyeWorldPos);
+	wireframeColor = getTessColor(distFromPos);
+
+    gl_Position = gVP * vec4(WorldPos, 1.0);                                              
+}                                                                                               
